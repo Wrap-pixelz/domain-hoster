@@ -1,3 +1,12 @@
+### `/apidocs`
+**Description:** Interactive Swagger UI for exploring and testing all API endpoints.
+
+**Usage:**
+- Open `http://<your-server>:<port>/apidocs` in your browser after starting the app.
+- View endpoint documentation, schemas, and try requests directly from the UI.
+
+**Note:**
+- Requires Swagger integration in your Flask app (e.g., using `flasgger` or `flask-swagger-ui`).
 # Domain Hoster
 
 A Python application for hosting/managing domains (project-specific behavior depends on this repository’s source code and configuration).
@@ -67,36 +76,79 @@ If your repository includes `requirements.txt`:
 pip install -r requirements.txt
 ```
 
-If it uses `pyproject.toml` (Poetry):
-
-```bash
-pip install poetry
-poetry install
-```
-
-If it uses `Pipfile` (Pipenv):
-
-```bash
-pip install pipenv
-pipenv install
-pipenv shell
-```
-
 > Use the method that matches the dependency files present in this repo.
 
-### 5) Run the application
+### 5) Configure environment variables
 
-How to run depends on how the project is structured. Common options:
+Copy the example environment file and edit as needed:
 
-- If there is an entry script like `main.py`:
-  ```bash
-  python main.py
-  ```
+```bash
+cp .env.example .env
+# Then edit .env to set your VPS_IP and other values
+```
 
-- If this is a package with a module entry point:
-  ```bash
-  python -m domain_hoster
-  ```
+**.env variables:**
+
+- `FLASK_ENV` - Flask environment (development/production)
+- `FLASK_HOST` - Host for Flask app (default: 0.0.0.0)
+- `FLASK_PORT` - Port for Flask app (default: 5000)
+- `SECRET_KEY` - Flask secret key
+- `VPS_IP` - Your server's public IP (used for domain validation)
+- `NGINX_TEMPLATE_PATH` - Path to NGINX Jinja2 template
+- `NGINX_SITES_AVAILABLE` - NGINX sites-available directory
+- `NGINX_SITES_ENABLED` - NGINX sites-enabled directory
+- `DOMAINS_FILE` - Path to domains JSON file
+- `ALLOWED_PORT_MIN`/`ALLOWED_PORT_MAX` - Allowed port range for apps
+
+### 6) Run the application
+
+```bash
+python app.py
+# or, for development:
+flask run
+```
+## API Endpoints
+
+All endpoints are prefixed by your server's base URL (e.g., `http://localhost:5000`).
+
+### `GET /health`
+**Description:** Health check endpoint. Returns `{"status": "ok"}` if the server is running.
+
+### `GET /domains`
+**Description:** List all managed domains and their assigned ports/status.
+
+**Response Example:**
+```json
+{
+  "example.com": { "port": 3000, "status": "active" }
+}
+```
+
+### `POST /domains`
+**Description:** Add a new domain and deploy its NGINX config.
+
+**Request Body:**
+```json
+{
+  "domain": "example.com",
+  "port": 3000
+}
+```
+**Validations:**
+- Domain must have an A record pointing to your VPS IP.
+- Port must be within allowed range.
+
+**Response:**
+- `201 Created` on success, with domain info.
+- Error message if validation or deployment fails.
+
+### `DELETE /domains/<domain>`
+**Description:** Remove a domain from management (does not remove NGINX config).
+
+**Response:**
+- `200 OK` on success, with confirmation message.
+- `404 Not Found` if domain is not managed.
+
 
 - If it is a web app (example: Flask):
   ```bash
