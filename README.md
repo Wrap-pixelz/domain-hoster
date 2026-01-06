@@ -1,12 +1,3 @@
-### `/apidocs`
-**Description:** Interactive Swagger UI for exploring and testing all API endpoints.
-
-**Usage:**
-- Open `http://<your-server>:<port>/apidocs` in your browser after starting the app.
-- View endpoint documentation, schemas, and try requests directly from the UI.
-
-**Note:**
-- Requires Swagger integration in your Flask app (e.g., using `flasgger` or `flask-swagger-ui`).
 # Domain Hoster
 
 A Python application for hosting/managing domains (project-specific behavior depends on this repository’s source code and configuration).
@@ -111,6 +102,13 @@ flask run
 
 All endpoints are prefixed by your server's base URL (e.g., `http://localhost:5000`).
 
+### `/apidocs`
+**Description:** Interactive Swagger UI for exploring and testing all API endpoints.
+
+**Usage:**
+- Open `http://localhost:5000/apidocs` in your browser after starting the app.
+- View endpoint documentation, schemas, and try requests directly from the UI.
+
 ### `GET /health`
 **Description:** Health check endpoint. Returns `{"status": "ok"}` if the server is running.
 
@@ -205,7 +203,3 @@ python -m venv .venv
 # activate it again, then:
 pip install -r requirements.txt
 ```
-
-## License
-
-Add license information here (if applicable).
