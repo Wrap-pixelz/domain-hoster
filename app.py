@@ -2,8 +2,9 @@ import os
 import json
 import socket
 import subprocess
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify,redirect, url_for
 from dotenv import load_dotenv
+from flasgger import Swagger, swag_from
 
 load_dotenv()
 
@@ -21,6 +22,19 @@ DEPLOY_SCRIPT = os.getenv("DEPLOY_SCRIPT", "scripts/deploy_nginx.py")
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = SECRET_KEY
+
+swagger_template = {
+    "swagger": "2.0",
+    "info": {
+        "title": "Domain Hoster API",
+        "description": "REST API for managing domains and provisioning NGINX on a VPS",
+        "version": "1.0.0"
+    },
+    "basePath": "/",
+    "schemes": ["http"],
+}
+
+Swagger(app, template=swagger_template)
 
 def load_domains():
     if not os.path.exists(DOMAINS_FILE):
@@ -44,15 +58,54 @@ def validate_port(port: int) -> bool:
     return ALLOWED_PORT_MIN <= port <= ALLOWED_PORT_MAX
 
 @app.route("/health", methods=["GET"])
+@swag_from({
+    "tags": ["Health"],
+    "responses": {
+        200: {
+            "description": "Service is healthy"
+        }
+    }
+})
 def health_check():
     return jsonify({"status": "ok"}), 200
 
 @app.route("/domains", methods=["GET"])
+@swag_from({
+    "tags": ["Domains"],
+    "responses": {
+        200: {
+            "description": "List all domains"
+        }
+    }
+})
 def list_domains():
-    domains = load_domains()
-    return jsonify(domains), 200
+    return jsonify(load_domains()), 200
 
 @app.route("/domains", methods=["POST"])
+@swag_from({
+    "tags": ["Domains"],
+    "parameters": [
+        {
+            "name": "body",
+            "in": "body",
+            "required": True,
+            "schema": {
+                "type": "object",
+                "required": ["domain", "port"],
+                "properties": {
+                    "domain": {"type": "string", "example": "example.com"},
+                    "port": {"type": "integer", "example": 3000}
+                }
+            }
+        }
+    ],
+    "responses": {
+        201: {"description": "Domain deployed successfully"},
+        400: {"description": "Validation error"},
+        409: {"description": "Domain already exists"},
+        500: {"description": "NGINX deployment failed"}
+    }
+})
 def add_domain():
     data = request.get_json(silent=True)
 
@@ -111,6 +164,21 @@ def add_domain():
     }), 201
 
 @app.route("/domains/<domain>", methods=["DELETE"])
+@swag_from({
+    "tags": ["Domains"],
+    "parameters": [
+        {
+            "name": "domain",
+            "in": "path",
+            "type": "string",
+            "required": True
+        }
+    ],
+    "responses": {
+        200: {"description": "Domain removed"},
+        404: {"description": "Domain not found"}
+    }
+})
 def delete_domain(domain):
     domains = load_domains()
 
